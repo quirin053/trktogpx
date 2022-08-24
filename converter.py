@@ -13,7 +13,8 @@ import datetime
 # regex
 # (?P<date>(?P<year>\d{4})\/(?P<month>\d{1,2})\/(?P<day>\d{1,2})  (?P<hour>\d{1,2}):(?P<minute>\d{1,2}):(?P<second>\d{1,2}))\n(?P<latitude>\d*,\d*)\n(?P<longitude>\d*,\d*)\n(?P<altitude>\d*,\d*)\n(?P<speed>\d*(,\d*)?)
 
-ifile = open("01.txt",'r')
+ifile = open("03.trk",'r')
+ifile.seek(4239) #skip unreadable content
 text = ifile.read()
 ifile.close()
 
