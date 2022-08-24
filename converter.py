@@ -3,6 +3,7 @@ from time import time
 import pandas as pd
 import gpxpy.gpx
 import datetime
+import math
 
 # 1988/8/5  4:1:49
 # 48,221282
@@ -13,7 +14,7 @@ import datetime
 # regex
 # (?P<date>(?P<year>\d{4})\/(?P<month>\d{1,2})\/(?P<day>\d{1,2})  (?P<hour>\d{1,2}):(?P<minute>\d{1,2}):(?P<second>\d{1,2}))\n(?P<latitude>\d*,\d*)\n(?P<longitude>\d*,\d*)\n(?P<altitude>\d*,\d*)\n(?P<speed>\d*(,\d*)?)
 
-ifile = open("03.trk",'r')
+ifile = open("01.trk",'r')
 ifile.seek(4239) #skip unreadable content
 text = ifile.read()
 ifile.close()
@@ -40,17 +41,29 @@ gpx = gpxpy.gpx.GPX()
 gpx_track = gpxpy.gpx.GPXTrack()
 gpx.tracks.append(gpx_track)
 
-# Create first segment in our GPX track:
+max_distance = 0.1
+max_time_delta = datetime.timedelta(0,0,0,0,5)
+
 gpx_segment = gpxpy.gpx.GPXTrackSegment()
-gpx_track.segments.append(gpx_segment)
+prev_tp_time = data[0]['time']
+prev_tp_pos = [data[0]['latitude'], data[0]['longitude']]
 
 # Create points:
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1234, 5.1234, elevation=1234))
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1235, 5.1235, elevation=1235))
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1236, 5.1236, elevation=1236))
 for trackpoint in data:
+    if trackpoint['time'] - prev_tp_time > max_time_delta or math.sqrt((trackpoint['latitude']-prev_tp_pos[0])**2+(trackpoint['longitude']-prev_tp_pos[1])**2) > max_distance:
+        gpx_track.segments.append(gpx_segment)
+        gpx_segment = gpxpy.gpx.GPXTrackSegment()
     gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(trackpoint['latitude'], trackpoint['longitude'], elevation=trackpoint['altitude'], time= trackpoint['time']))
+    prev_tp_time = trackpoint['time']
+    prev_tp_pos = [trackpoint['latitude'], trackpoint['longitude']]
 
+
+# Create first segment in our GPX track:
+
+gpx_track.segments.append(gpx_segment)
 # You can add routes and waypoints, too...
 
 # print('Created GPX:', gpx.to_xml())
