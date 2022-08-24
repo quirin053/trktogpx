@@ -4,6 +4,8 @@ import pandas as pd
 import gpxpy.gpx
 import datetime
 import math
+import argparse
+import os
 
 # 1988/8/5  4:1:49
 # 48,221282
@@ -14,7 +16,14 @@ import math
 # regex
 # (?P<date>(?P<year>\d{4})\/(?P<month>\d{1,2})\/(?P<day>\d{1,2})  (?P<hour>\d{1,2}):(?P<minute>\d{1,2}):(?P<second>\d{1,2}))\n(?P<latitude>\d*,\d*)\n(?P<longitude>\d*,\d*)\n(?P<altitude>\d*,\d*)\n(?P<speed>\d*(,\d*)?)
 
-ifile = open("01.trk",'r')
+# CLI Parser
+parser = argparse.ArgumentParser(description="Convert moveiQ .trk file to .gpx")
+parser.add_argument("filename", type=argparse.FileType('r'), help="input file path")
+parser.add_argument("--time", "-t", help="actual recording start time")
+args = parser.parse_args()
+
+# ifile = open("01.trk",'r')
+ifile = args.filename
 ifile.seek(4239) #skip unreadable content
 text = ifile.read()
 ifile.close()
@@ -25,7 +34,7 @@ data = []
 
 for match in trackpoint_pattern.finditer(text):
     # print(match.group(0))
-    pointtime = datetime.datetime(int(match.group('year')), int(match.group('month')), int(match.group('day')), int(match.group('hour')), int(match.group('minute')), int(match.group('second')));
+    pointtime = datetime.datetime(int(match.group('year')), int(match.group('month')), int(match.group('day')), int(match.group('hour')), int(match.group('minute')), int(match.group('second')))
     trackpoint = {
         'time': pointtime,
         'latitude': float(match.group('latitude').replace(',','.')),
@@ -48,8 +57,21 @@ gpx_segment = gpxpy.gpx.GPXTrackSegment()
 prev_tp_time = data[0]['time']
 prev_tp_pos = [data[0]['latitude'], data[0]['longitude']]
 
-actual_start_time = datetime.datetime(2022, 8, 18, 16, 13, 28)
-timeshift = actual_start_time - data[0]['time']
+timeshift = datetime.timedelta(0)
+time_pattern = re.compile(r'(?P<year>\d{4})-(?P<month>[01]?\d)-(?P<day>[0123]?\d)-(?P<hour>[012]?\d)-(?P<minute>[0-5]?\d)(-(?P<second>[0-5]?\d))?')
+
+if args.time:
+    match = re.search(time_pattern, args.time)
+    actual_start_time = datetime.datetime(
+        int(match.group('year')),
+        int(match.group('month')),
+        int(match.group('day')),
+        int(match.group('hour')),
+        int(match.group('minute')),
+        int(match.group('second') or '0'))
+    timeshift = actual_start_time - data[0]['time']
+
+
 
 camsync_camera_time = datetime.datetime(2022, 8, 18, 16, 14, 28)
 camsync_gps_time = datetime.datetime(2022, 8, 18, 16, 13, 28)
@@ -67,14 +89,11 @@ for trackpoint in data:
     prev_tp_time = trackpoint['time']
     prev_tp_pos = [trackpoint['latitude'], trackpoint['longitude']]
 
-
-# Create first segment in our GPX track:
-
 gpx_track.segments.append(gpx_segment)
 # You can add routes and waypoints, too...
 
 # print('Created GPX:', gpx.to_xml())
 
-f = open("3207498739.gpx", "w")
+f = open(os.path.splitext(ifile.name)[0]+".gpx", "w")
 f.write(gpx.to_xml())
 f.close()
