@@ -48,6 +48,13 @@ gpx_segment = gpxpy.gpx.GPXTrackSegment()
 prev_tp_time = data[0]['time']
 prev_tp_pos = [data[0]['latitude'], data[0]['longitude']]
 
+actual_start_time = datetime.datetime(2022, 8, 18, 16, 13, 28)
+timeshift = actual_start_time - data[0]['time']
+
+camsync_camera_time = datetime.datetime(2022, 8, 18, 16, 14, 28)
+camsync_gps_time = datetime.datetime(2022, 8, 18, 16, 13, 28)
+timeshift += camsync_camera_time - camsync_gps_time
+
 # Create points:
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1234, 5.1234, elevation=1234))
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1235, 5.1235, elevation=1235))
@@ -56,7 +63,7 @@ for trackpoint in data:
     if trackpoint['time'] - prev_tp_time > max_time_delta or math.sqrt((trackpoint['latitude']-prev_tp_pos[0])**2+(trackpoint['longitude']-prev_tp_pos[1])**2) > max_distance:
         gpx_track.segments.append(gpx_segment)
         gpx_segment = gpxpy.gpx.GPXTrackSegment()
-    gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(trackpoint['latitude'], trackpoint['longitude'], elevation=trackpoint['altitude'], time= trackpoint['time']))
+    gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(trackpoint['latitude'], trackpoint['longitude'], elevation=trackpoint['altitude'], time= trackpoint['time']+timeshift))
     prev_tp_time = trackpoint['time']
     prev_tp_pos = [trackpoint['latitude'], trackpoint['longitude']]
 
