@@ -20,6 +20,7 @@ import os
 parser = argparse.ArgumentParser(description="Convert moveiQ .trk file to .gpx")
 parser.add_argument("filename", type=argparse.FileType('r'), help="input file path")
 parser.add_argument("--time", "-t", help="actual recording start time")
+parser.add_argument("--sync", "-s", help="1. GPS Time, 2. Camera Time", nargs=2)
 args = parser.parse_args()
 
 # ifile = open("01.trk",'r')
@@ -71,11 +72,31 @@ if args.time:
         int(match.group('second') or '0'))
     timeshift = actual_start_time - data[0]['time']
 
+if args.sync:
+    match = re.search(time_pattern, args.sync[0])
+    camsync_gps_time = datetime.datetime(
+        int(match.group('year')),
+        int(match.group('month')),
+        int(match.group('day')),
+        int(match.group('hour')),
+        int(match.group('minute')),
+        int(match.group('second') or '0'))
+
+    match = re.search(time_pattern, args.sync[1])
+    camsync_camera_time = datetime.datetime(
+        int(match.group('year')),
+        int(match.group('month')),
+        int(match.group('day')),
+        int(match.group('hour')),
+        int(match.group('minute')),
+        int(match.group('second') or '0'))
+    timeshift += camsync_camera_time - camsync_gps_time
 
 
-camsync_camera_time = datetime.datetime(2022, 8, 18, 16, 14, 28)
-camsync_gps_time = datetime.datetime(2022, 8, 18, 16, 13, 28)
-timeshift += camsync_camera_time - camsync_gps_time
+
+# camsync_camera_time = datetime.datetime(2022, 8, 18, 16, 14, 28)
+# camsync_gps_time = datetime.datetime(2022, 8, 18, 16, 13, 28)
+# timeshift += camsync_camera_time - camsync_gps_time
 
 # Create points:
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1234, 5.1234, elevation=1234))
