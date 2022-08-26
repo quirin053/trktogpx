@@ -21,6 +21,7 @@ parser = argparse.ArgumentParser(description="Convert moveiQ .trk file to .gpx")
 parser.add_argument("filename", type=argparse.FileType('r'), help="input file path")
 parser.add_argument("--time", "-t", help="actual recording start time")
 parser.add_argument("--sync", "-s", help="1. GPS Time, 2. Camera Time", nargs=2)
+parser.add_argument("--dontsplit", help="dont split the track into segments", action="store_true")
 args = parser.parse_args()
 
 # ifile = open("01.trk",'r')
@@ -103,7 +104,7 @@ if args.sync:
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1235, 5.1235, elevation=1235))
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1236, 5.1236, elevation=1236))
 for trackpoint in data:
-    if trackpoint['time'] - prev_tp_time > max_time_delta or math.sqrt((trackpoint['latitude']-prev_tp_pos[0])**2+(trackpoint['longitude']-prev_tp_pos[1])**2) > max_distance:
+    if (trackpoint['time'] - prev_tp_time > max_time_delta or math.sqrt((trackpoint['latitude']-prev_tp_pos[0])**2+(trackpoint['longitude']-prev_tp_pos[1])**2) > max_distance) and not args.dontsplit:
         gpx_track.segments.append(gpx_segment)
         gpx_segment = gpxpy.gpx.GPXTrackSegment()
     gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(trackpoint['latitude'], trackpoint['longitude'], elevation=trackpoint['altitude'], time= trackpoint['time']+timeshift))
