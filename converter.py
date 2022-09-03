@@ -6,6 +6,7 @@ import datetime
 import math
 import argparse
 import os
+import srtm
 
 # Example of a .trk Trackpoint
 # 1988/8/5  4:1:49
@@ -20,6 +21,7 @@ import os
 # CLI Parser
 parser = argparse.ArgumentParser(description="Convert moveiQ .trk file to .gpx")
 split = parser.add_mutually_exclusive_group()
+elevation = parser.add_mutually_exclusive_group()
 parser.add_argument("filename", type=argparse.FileType('r'), help="input file path")
 parser.add_argument("--time", "-t", help="actual recording start time")
 parser.add_argument("--sync", help="1. GPS Time, 2. Camera Time", nargs=2)
@@ -28,6 +30,8 @@ split.add_argument("--dontsplit", help="dont split the track into segments", act
 split.add_argument("--separate", "-s", help="save track segments to separate files", action="store_true")
 parser.add_argument("--maxtime", help="maximum time between trackpoints for splitting, hh-mm")
 parser.add_argument("--maxdistance", help="maximum distance between trackpoints for splitting, in degree")
+elevation.add_argument("--srtm", help="replace redorded elevation data with srtm data", action="store_true")
+# elevation.add_argument("--gpxz", help="replace redorded elevation data with gpxz data", action="store_true")
 args = parser.parse_args()
 
 # open file
@@ -90,6 +94,13 @@ if args.sync:
         int(match.group('second') or '0'))
     timeshift += camsync_camera_time - camsync_gps_time
 
+# elevation correction
+# srtm
+# set cache directory to script location
+if args.srtm:
+    elevation_data = srtm.get_data(local_cache_dir=os.path.dirname(__file__))
+    for trackpoint in data:
+        trackpoint['altitude'] = elevation_data.get_elevation(trackpoint['latitude'], trackpoint['longitude'])
 
 
 # Create points:
@@ -99,6 +110,7 @@ if args.sync:
 
 # create gpx file
 gpx = gpxpy.gpx.GPX()
+gpx.creator = "trktogpx -- https://github.com/quirin053/trktogpx using https://github.com/tkrajina/gpxpy"
 
 # create first track
 gpx_track = gpxpy.gpx.GPXTrack()
