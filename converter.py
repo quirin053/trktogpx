@@ -21,6 +21,7 @@ parser = argparse.ArgumentParser(description="Convert moveiQ .trk file to .gpx")
 parser.add_argument("filename", type=argparse.FileType('r'), help="input file path")
 parser.add_argument("--time", "-t", help="actual recording start time")
 parser.add_argument("--sync", "-s", help="1. GPS Time, 2. Camera Time", nargs=2)
+parser.add_argument("--output", "-o", help="Output file Name")
 parser.add_argument("--dontsplit", help="dont split the track into segments", action="store_true")
 args = parser.parse_args()
 
@@ -115,7 +116,7 @@ gpx_track.segments.append(gpx_segment)
 # You can add routes and waypoints, too...
 
 # print('Created GPX:', gpx.to_xml())
-
-f = open(os.path.splitext(ifile.name)[0]+".gpx", "w")
+output_file = args.output.split(".")[0] if args.output else os.path.splitext(ifile.name)[0]
+f = open(output_file+".gpx", "w")
 f.write(gpx.to_xml())
 f.close()
