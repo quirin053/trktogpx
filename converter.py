@@ -26,6 +26,8 @@ parser.add_argument("--sync", help="1. GPS Time, 2. Camera Time", nargs=2)
 parser.add_argument("--output", "-o", help="Output file Name")
 split.add_argument("--dontsplit", help="dont split the track into segments", action="store_true")
 split.add_argument("--separate", "-s", help="save track segments to separate files", action="store_true")
+parser.add_argument("--maxtime", help="maximum time between trackpoints for splitting, hh-mm")
+parser.add_argument("--maxdistance", help="maximum distance between trackpoints for splitting, in degree")
 args = parser.parse_args()
 
 # open file
@@ -102,8 +104,9 @@ gpx = gpxpy.gpx.GPX()
 gpx_track = gpxpy.gpx.GPXTrack()
 gpx.tracks.append(gpx_track)
 
-max_distance = 0.1
-max_time_delta = datetime.timedelta(0,0,0,0,5)
+max_distance = int(args.maxdistance or "0") or 0.1
+mtime = args.maxtime.split("-") if args.maxtime else [0,5]
+max_time_delta = datetime.timedelta(hours=int(mtime[0]),minutes=int(mtime[1]))
 
 gpx_segment = gpxpy.gpx.GPXTrackSegment()
 prev_tp_time = data[0]['time']
