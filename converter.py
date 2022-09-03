@@ -134,9 +134,11 @@ for trackpoint in data:
             f = open(output_file+"-"+str(filecount)+".gpx", "w")
             f.write(gpx.to_xml())
             f.close()
+            gpx = gpxpy.gpx.GPX()
+            gpx.creator = "trktogpx -- https://github.com/quirin053/trktogpx using https://github.com/tkrajina/gpxpy"
             gpx_track = gpxpy.gpx.GPXTrack()
-            gpx_segment = gpxpy.gpx.GPXTrackSegment()
             gpx.tracks.append(gpx_track)
+            gpx_segment = gpxpy.gpx.GPXTrackSegment()
             filecount+=1
         else: # create new track segment
             gpx_track.segments.append(gpx_segment)
