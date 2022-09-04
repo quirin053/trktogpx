@@ -10,6 +10,7 @@ import srtm
 import numpy as np
 import requests
 import time
+from dotenv import load_dotenv
 # Example of a .trk Trackpoint
 # 1988/8/5  4:1:49
 # 48,221282
@@ -90,37 +91,39 @@ if args.sync:
 # srtm
 # set cache directory to script location
 if args.srtm:
-    elevation_data = srtm.get_data(local_cache_dir=os.path.dirname(__file__))
+    load_dotenv()
+    elevation_data = srtm.get_data(local_cache_dir=os.getenv('SRTM_CACHE_PATH') or os.path.dirname(__file__))
     for trackpoint in data:
         trackpoint['altitude'] = elevation_data.get_elevation(trackpoint['latitude'], trackpoint['longitude'])
 
 # gpxz
 # https://www.gpxz.io/blog/add-elevation-to-gpx-file
-API_KEY = ''
-BATCH_SIZE = 50
-
-def gpxz_elevation(lats, lons):
-    '''Iterate over the coordinates in chunks, querying the GPXZ api to return
-    a list of elevations in the same order.'''
-    elevations = []
-    print(f'points: {len(lats)}')
-    n_chunks = int(len(lats) // BATCH_SIZE)  + 1
-    lat_chunks = np.array_split(lats, n_chunks) 
-    lon_chunks = np.array_split(lons, n_chunks)
-    for lat_chunk, lon_chunk in zip(lat_chunks, lon_chunks):
-        print(f'requesting {len(lat_chunk)} points')
-        latlons = '|'.join(f'{lat},{lon}' for lat, lon in zip(lat_chunk, lon_chunk))
-        response = requests.post(
-            'https://api.gpxz.io/v1/elevation/points', 
-            headers={'x-api-key': API_KEY},
-            data={'latlons': latlons},
-        )
-        response.raise_for_status()
-        elevations += [r['elevation'] for r in response.json()['results']]
-        time.sleep(1.1)
-    return elevations
 
 if args.gpxz:
+    load_dotenv()
+    API_KEY = os.getenv('GPXZ_API_KEY')
+    BATCH_SIZE = int(os.getenv('GPXZ_BATCH_SIZE'))
+    def gpxz_elevation(lats, lons):
+        '''Iterate over the coordinates in chunks, querying the GPXZ api to return
+        a list of elevations in the same order.'''
+        elevations = []
+        print(f'points: {len(lats)}')
+        n_chunks = int(len(lats) // BATCH_SIZE)  + 1
+        lat_chunks = np.array_split(lats, n_chunks) 
+        lon_chunks = np.array_split(lons, n_chunks)
+        for lat_chunk, lon_chunk in zip(lat_chunks, lon_chunks):
+            print(f'requesting {len(lat_chunk)} points')
+            latlons = '|'.join(f'{lat},{lon}' for lat, lon in zip(lat_chunk, lon_chunk))
+            response = requests.post(
+                'https://api.gpxz.io/v1/elevation/points', 
+                headers={'x-api-key': API_KEY},
+                data={'latlons': latlons},
+            )
+            response.raise_for_status()
+            elevations += [r['elevation'] for r in response.json()['results']]
+            time.sleep(1.1)
+        return elevations
+
     latitudes = [p['latitude'] for p in data]
     longitudes = [p['longitude'] for p in data]
     elevations = gpxz_elevation(latitudes, longitudes)
