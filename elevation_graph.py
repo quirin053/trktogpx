@@ -1,4 +1,5 @@
 from asyncio.windows_events import NULL
+from cProfile import label
 import gpxpy
 import gpxpy.gpx
 import matplotlib.pyplot as plt
@@ -13,7 +14,8 @@ class Track():
         d=math.sqrt((prev_point.longitude-point.longitude)**2+(prev_point.latitude-point.latitude)**2)
         return d
 
-    def __init__(self, filename):
+    def __init__(self, filename, name):
+        self.name = name
         self.lat_list=[]
         self.ele_list=[]
         self.lon_list=[]
@@ -33,13 +35,15 @@ class Track():
                     prev_point = point
                     l += 1
 
-tracks = [Track('55-3.gpx'),Track('01-3.gpx')]
+tracks = [Track('78.gpx','srtm'),Track('76.gpx','raw gps'),Track('77.gpx','gpxz')]
 
 base_reg = 0
 
 plt.figure(figsize=(8*1.5,5*1.1))
 for track in tracks:
-    plt.plot(track.d_list,track.ele_list)
+    plt.plot(track.d_list,track.ele_list, label=track.name)
 plt.ylabel("GPS Elevation(m)")
+plt.xlabel("Distance")
 plt.grid()
+plt.legend()
 plt.show()

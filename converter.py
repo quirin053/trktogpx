@@ -7,7 +7,9 @@ import math
 import argparse
 import os
 import srtm
-
+import numpy as np
+import requests
+import time
 # Example of a .trk Trackpoint
 # 1988/8/5  4:1:49
 # 48,221282
@@ -17,6 +19,19 @@ import srtm
 
 # regex
 # (?P<date>(?P<year>\d{4})\/(?P<month>\d{1,2})\/(?P<day>\d{1,2})  (?P<hour>\d{1,2}):(?P<minute>\d{1,2}):(?P<second>\d{1,2}))\n(?P<latitude>\d*,\d*)\n(?P<longitude>\d*,\d*)\n(?P<altitude>\d*,\d*)\n(?P<speed>\d*(,\d*)?)
+
+def parse_time(timestring):
+    time_pattern = re.compile(r'(?P<year>\d{4})-(?P<month>[01]?\d)-(?P<day>[0123]?\d)-(?P<hour>[012]?\d)-(?P<minute>[0-5]?\d)(-(?P<second>[0-5]?\d))?')
+    match = re.search(time_pattern, timestring)
+    time = datetime.datetime(
+        int(match.group('year')),
+        int(match.group('month')),
+        int(match.group('day')),
+        int(match.group('hour')),
+        int(match.group('minute')),
+        int(match.group('second') or '0'))
+    return time
+
 
 # CLI Parser
 parser = argparse.ArgumentParser(description="Convert moveiQ .trk file to .gpx")
@@ -31,7 +46,7 @@ split.add_argument("--separate", "-s", help="save track segments to separate fil
 parser.add_argument("--maxtime", help="maximum time between trackpoints for splitting, hh-mm")
 parser.add_argument("--maxdistance", help="maximum distance between trackpoints for splitting, in degree")
 elevation.add_argument("--srtm", help="replace redorded elevation data with srtm data", action="store_true")
-# elevation.add_argument("--gpxz", help="replace redorded elevation data with gpxz data", action="store_true")
+elevation.add_argument("--gpxz", help="replace redorded elevation data with gpxz data", action="store_true")
 args = parser.parse_args()
 
 # open file
@@ -59,39 +74,16 @@ for match in trackpoint_pattern.finditer(text):
 
 
 timeshift = datetime.timedelta(0)
-time_pattern = re.compile(r'(?P<year>\d{4})-(?P<month>[01]?\d)-(?P<day>[0123]?\d)-(?P<hour>[012]?\d)-(?P<minute>[0-5]?\d)(-(?P<second>[0-5]?\d))?')
 
 # calculate timeshift for starting time
 if args.time:
-    match = re.search(time_pattern, args.time)
-    actual_start_time = datetime.datetime(
-        int(match.group('year')),
-        int(match.group('month')),
-        int(match.group('day')),
-        int(match.group('hour')),
-        int(match.group('minute')),
-        int(match.group('second') or '0'))
+    actual_start_time = parse_time(args.time)
     timeshift = actual_start_time - data[0]['time']
 
 # add timeshift for camerasync
 if args.sync:
-    match = re.search(time_pattern, args.sync[0])
-    camsync_gps_time = datetime.datetime(
-        int(match.group('year')),
-        int(match.group('month')),
-        int(match.group('day')),
-        int(match.group('hour')),
-        int(match.group('minute')),
-        int(match.group('second') or '0'))
-
-    match = re.search(time_pattern, args.sync[1])
-    camsync_camera_time = datetime.datetime(
-        int(match.group('year')),
-        int(match.group('month')),
-        int(match.group('day')),
-        int(match.group('hour')),
-        int(match.group('minute')),
-        int(match.group('second') or '0'))
+    camsync_gps_time = parse_time(args.sync[0])
+    camsync_camera_time = parse_time(args.sync[1])
     timeshift += camsync_camera_time - camsync_gps_time
 
 # elevation correction
@@ -102,6 +94,38 @@ if args.srtm:
     for trackpoint in data:
         trackpoint['altitude'] = elevation_data.get_elevation(trackpoint['latitude'], trackpoint['longitude'])
 
+# gpxz
+# https://www.gpxz.io/blog/add-elevation-to-gpx-file
+API_KEY = ''
+BATCH_SIZE = 50
+
+def gpxz_elevation(lats, lons):
+    '''Iterate over the coordinates in chunks, querying the GPXZ api to return
+    a list of elevations in the same order.'''
+    elevations = []
+    print(f'points: {len(lats)}')
+    n_chunks = int(len(lats) // BATCH_SIZE)  + 1
+    lat_chunks = np.array_split(lats, n_chunks) 
+    lon_chunks = np.array_split(lons, n_chunks)
+    for lat_chunk, lon_chunk in zip(lat_chunks, lon_chunks):
+        print(f'requesting {len(lat_chunk)} points')
+        latlons = '|'.join(f'{lat},{lon}' for lat, lon in zip(lat_chunk, lon_chunk))
+        response = requests.post(
+            'https://api.gpxz.io/v1/elevation/points', 
+            headers={'x-api-key': API_KEY},
+            data={'latlons': latlons},
+        )
+        response.raise_for_status()
+        elevations += [r['elevation'] for r in response.json()['results']]
+        time.sleep(1.1)
+    return elevations
+
+if args.gpxz:
+    latitudes = [p['latitude'] for p in data]
+    longitudes = [p['longitude'] for p in data]
+    elevations = gpxz_elevation(latitudes, longitudes)
+    for point, elevation in zip(data, elevations):
+        point['altitude'] = elevation
 
 # Create points:
 # gpx_segment.points.append(gpxpy.gpx.GPXTrackPoint(2.1234, 5.1234, elevation=1234))
