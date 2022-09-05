@@ -4,3 +4,4 @@
 *.png
 *.geojson
 *.hgt
+parsetest.py
