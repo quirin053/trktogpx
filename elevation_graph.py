@@ -35,7 +35,7 @@ class Track():
                     prev_point = point
                     l += 1
 
-tracks = [Track('78.gpx','srtm'),Track('76.gpx','raw gps'),Track('77.gpx','gpxz')]
+tracks = [Track('81.gpx','srtm'),Track('80.gpx','raw gps'),Track('82.gpx','gpxz')]
 
 base_reg = 0
 

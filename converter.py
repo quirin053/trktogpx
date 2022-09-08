@@ -1,6 +1,4 @@
 import re
-from time import time
-import pandas as pd
 import gpxpy.gpx
 import datetime
 import math

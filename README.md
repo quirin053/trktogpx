@@ -1,6 +1,13 @@
 # trktogpx
 trktogpx converts data recorded by a mapjack moveiq GPS Tracker in `.trk` format (at least it claims to be, but the files do not get recognized by any converter tools) to standard `.gpx`. You first have to download the recordings using the MoveIQ App, but since the official website doesn't exist anymore the only working Download I found is [here](https://de.elv.com/mapjack-move-iq-gps-datenlogger-094679). Note that all recordings will be stored in the same `.trk` file.
 
+## Installation
+[First of all, you need to install python.](https://www.python.org/downloads/)
+Then upgrade **pip** and install the required packages:
+```
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
 ## CLI
 The following command will convert your file `input.trk` to `.gpx` and split the recordings into **TrackSegments**.
@@ -40,7 +47,7 @@ Since the recorded height is often inaccurate, its common to add or replace it r
 Data from the [Shuttle-Radar-Topography-Mission](wikipedia.org/wiki/Shuttle_Radar_Topography_Mission) can be used via the `--srtm` command. You can set the cache directory in the `.env` file
 ### GPXZ
 [GPXZ.io](https://www.gpxz.io/) provides higher-resolution and smoother elevation data, but you need to create an _API-Key_.
-Add this key to the `.env` file and adjust the `GPXZ_BATCH_SIZE` according to your plan. (_50_ for the free plan)
+Add this key to the `.env` file and adjust the `GPXZ_BATCH_SIZE` according to your plan (_50_ for the free plan). Once this is set up you can use it with `--gpxz`.
 
 ## Credits
 - creating the gpx file: [tkrajina/gpxpy](https://github.com/tkrajina/gpxpy)

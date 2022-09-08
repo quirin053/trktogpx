@@ -5,3 +5,8 @@
 *.geojson
 *.hgt
 parsetest.py
+.vscode
+Include
+Lib
+Scripts
+pyvenv.cfg
