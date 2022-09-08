@@ -1,0 +1,5 @@
+gpxpy
+SRTM.py
+python-dotenv
+numpy
+requests
