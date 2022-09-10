@@ -50,26 +50,46 @@ args = parser.parse_args()
 
 # open file
 ifile = args.filename
-ifile.seek(4239) #skip unreadable content
-text = ifile.read()
-ifile.close()
+format = os.path.splitext(ifile.name)[1]
+if format == ".trk":
+    trk = True
+    ifile.seek(4239) #skip unreadable content
+    text = ifile.read()
+    ifile.close()
+elif format == ".gpx":
+    trk = False
+else:
+    print("invalid file")
+    quit()
 
 # extract trackpoints
 trackpoint_pattern = re.compile(r'(?P<date>(?P<year>\d{4})\/(?P<month>\d{1,2})\/(?P<day>\d{1,2})  (?P<hour>\d{1,2}):(?P<minute>\d{1,2}):(?P<second>\d{1,2}))\n(?P<latitude>\d*,\d*)\n(?P<longitude>\d*,\d*)\n(?P<altitude>\d*,\d*)\n(?P<speed>\d*(,\d*)?)')
 
 data = []
 
-for match in trackpoint_pattern.finditer(text):
-    # print(match.group(0))
-    pointtime = datetime.datetime(int(match.group('year')), int(match.group('month')), int(match.group('day')), int(match.group('hour')), int(match.group('minute')), int(match.group('second')))
-    trackpoint = {
-        'time': pointtime,
-        'latitude': float(match.group('latitude').replace(',','.')),
-        'longitude': float(match.group('longitude').replace(',','.')),
-        'altitude': float(match.group('altitude').replace(',','.')),
-        'speed': float(match.group('speed').replace(',','.'))
-    }
-    data.append(trackpoint)
+if trk:
+    for match in trackpoint_pattern.finditer(text):
+        # print(match.group(0))
+        pointtime = datetime.datetime(int(match.group('year')), int(match.group('month')), int(match.group('day')), int(match.group('hour')), int(match.group('minute')), int(match.group('second')))
+        trackpoint = {
+            'time': pointtime,
+            'latitude': float(match.group('latitude').replace(',','.')),
+            'longitude': float(match.group('longitude').replace(',','.')),
+            'altitude': float(match.group('altitude').replace(',','.'))
+        }
+        data.append(trackpoint)
+else:
+    gpxin = gpxpy.parse(ifile)
+    for track in gpxin.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                trackpoint = {
+                    'time': point.time,
+                    'latitude': point.latitude,
+                    'longitude': point.longitude,
+                    'altitude': point.elevation
+                }
+                data.append(trackpoint)
 
 
 timeshift = datetime.timedelta(0)

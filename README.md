@@ -15,6 +15,8 @@ The following command will convert your file `input.trk` to `.gpx` and split the
 python converter.py input.trk
 ```
 
+In addition, it is possible to use `.gpx` files as input if functions such as time or altitude correction are to be applied to individual sections only.
+
 ### Adjust Split Parameters:
 - `--maxtime` the maximum amount of time between two trackpoints in `hh-mm`, default: `00-05`
 - `--maxdistance` the maximum distance, in _degree_, default: `0.5`
@@ -47,7 +49,7 @@ Since the recorded height is often inaccurate, its common to add or replace it r
 Data from the [Shuttle-Radar-Topography-Mission](wikipedia.org/wiki/Shuttle_Radar_Topography_Mission) can be used via the `--srtm` command. You can set the cache directory in the `.env` file
 ### GPXZ
 [GPXZ.io](https://www.gpxz.io/) provides higher-resolution and smoother elevation data, but you need to create an _API-Key_.
-Add this key to the `.env` file and adjust the `GPXZ_BATCH_SIZE` according to your plan (_50_ for the free plan). Once this is set up you can use it with `--gpxz`.
+Add this key to the `.env` file and adjust the `GPXZ_BATCH_SIZE` according to your plan (**50** for the free plan). Once this is set up you can use it with `--gpxz`.
 
 ## Credits
 - creating the gpx file: [tkrajina/gpxpy](https://github.com/tkrajina/gpxpy)
