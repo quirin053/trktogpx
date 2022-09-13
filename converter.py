@@ -84,7 +84,7 @@ else:
         for segment in track.segments:
             for point in segment.points:
                 trackpoint = {
-                    'time': point.time,
+                    'time': point.time.replace(tzinfo=None),
                     'latitude': point.latitude,
                     'longitude': point.longitude,
                     'altitude': point.elevation
@@ -97,6 +97,8 @@ timeshift = datetime.timedelta(0)
 # calculate timeshift for starting time
 if args.time:
     actual_start_time = parse_time(args.time)
+    print(actual_start_time)
+    print(data[0]['time'])
     timeshift = actual_start_time - data[0]['time']
 
 # add timeshift for camerasync
